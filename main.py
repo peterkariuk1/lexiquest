@@ -101,3 +101,25 @@ async def generate_lesson(request: LessonRequest):
         lesson_json = json.loads(match.group(0)) if match else {"error": "Invalid JSON returned"}
 
     return lesson_json
+
+
+@app.post("/get-lesson-json")
+async def get_lesson_json(request: LessonRequest):
+    chain = prompt_template | model
+
+    response = chain.invoke({
+        "user_prompt": request.prompt
+    })
+
+    raw = response.content
+
+    try:
+        lesson_json = json.loads(raw)
+    except json.JSONDecodeError:
+        import re
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        lesson_json = json.loads(match.group(0)) if match else {"error": "Invalid JSON returned"}
+
+    return {
+        "lesson_json": lesson_json
+    }
